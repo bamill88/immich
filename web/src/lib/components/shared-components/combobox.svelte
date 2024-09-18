@@ -32,6 +32,7 @@
 
   export let label: string;
   export let hideLabel = false;
+  export let maintainSelectedOption = true;
   export let options: ComboBoxOption[] = [];
   export let selectedOption: ComboBoxOption | undefined = undefined;
   export let placeholder = '';
@@ -63,6 +64,7 @@
 
   const dispatch = createEventDispatcher<{
     select: ComboBoxOption | undefined;
+    close: void;
   }>();
 
   const activate = () => {
@@ -82,6 +84,7 @@
   };
 
   const closeDropdown = () => {
+    dispatch('close');
     isOpen = false;
     selectedIndex = undefined;
   };
@@ -106,8 +109,10 @@
   };
 
   let onSelect = (option: ComboBoxOption) => {
-    selectedOption = option;
-    searchQuery = option.label;
+    if (maintainSelectedOption) {
+      selectedOption = option;
+      searchQuery = option.label;
+    }
     dispatch('select', option);
     closeDropdown();
   };

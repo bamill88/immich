@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { AssetOrder } from 'src/enum';
-import { TimeBucketSize } from 'src/interfaces/asset.interface';
+import { AnyOrAll, TimeBucketSize } from 'src/interfaces/asset.interface';
 import { Optional, ValidateBoolean, ValidateUUID } from 'src/validation';
 
 export class TimeBucketDto {
@@ -19,8 +19,13 @@ export class TimeBucketDto {
   @ValidateUUID({ optional: true })
   personId?: string;
 
-  @ValidateUUID({ optional: true })
-  tagId?: string;
+  @ValidateUUID({ optional: true, each: true })
+  tagIds?: string[];
+
+  @IsEnum(AnyOrAll)
+  @Optional()
+  @ApiProperty({ enum: AnyOrAll, enumName: 'AnyOrAll' })
+  tagsAnyOrAll?: AnyOrAll;
 
   @ValidateBoolean({ optional: true })
   isArchived?: boolean;

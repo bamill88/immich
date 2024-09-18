@@ -45,13 +45,19 @@ export enum TimeBucketSize {
   MONTH = 'MONTH',
 }
 
+export enum AnyOrAll {
+  ANY = 'any',
+  ALL = 'all',
+}
+
 export interface AssetBuilderOptions {
   isArchived?: boolean;
   isFavorite?: boolean;
   isTrashed?: boolean;
   isDuplicate?: boolean;
   albumId?: string;
-  tagId?: string;
+  tagIds?: string[];
+  tagsAnyOrAll?: AnyOrAll;
   personId?: string;
   userIds?: string[];
   withStacked?: boolean;

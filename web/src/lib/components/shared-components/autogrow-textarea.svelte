@@ -7,6 +7,7 @@
   let className: string = '';
   export { className as class };
   export let onContentUpdate: (newContent: string) => void = () => null;
+  export const handleFocus = () => textarea.focus();
   export let placeholder: string = '';
 
   let textarea: HTMLTextAreaElement;

@@ -32,7 +32,7 @@ export class ParseMeUUIDPipe extends ParseUUIDPipe {
     if (value == 'me') {
       return value;
     }
-    return super.transform(value, metadata);
+    return await super.transform(value, metadata);
   }
 }
 

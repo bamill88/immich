@@ -6625,12 +6625,23 @@
             }
           },
           {
-            "name": "tagId",
+            "name": "tagIds",
             "required": false,
             "in": "query",
             "schema": {
               "format": "uuid",
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "tagsAnyOrAll",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnyOrAll"
             }
           },
           {
@@ -6769,12 +6780,23 @@
             }
           },
           {
-            "name": "tagId",
+            "name": "tagIds",
             "required": false,
             "in": "query",
             "schema": {
               "format": "uuid",
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "tagsAnyOrAll",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnyOrAll"
             }
           },
           {
@@ -7865,6 +7887,13 @@
           "videoConversion"
         ],
         "type": "object"
+      },
+      "AnyOrAll": {
+        "enum": [
+          "any",
+          "all"
+        ],
+        "type": "string"
       },
       "AssetBulkDeleteDto": {
         "properties": {
@@ -9923,6 +9952,16 @@
             "nullable": true,
             "type": "string"
           },
+          "tagIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tagsAnyOrAll": {
+            "$ref": "#/components/schemas/AnyOrAll"
+          },
           "takenAfter": {
             "format": "date-time",
             "type": "string"
@@ -11281,6 +11320,16 @@
           "state": {
             "nullable": true,
             "type": "string"
+          },
+          "tagIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tagsAnyOrAll": {
+            "$ref": "#/components/schemas/AnyOrAll"
           },
           "takenAfter": {
             "format": "date-time",

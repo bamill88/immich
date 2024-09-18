@@ -791,6 +791,8 @@ export type MetadataSearchDto = {
     previewPath?: string;
     size?: number;
     state?: string | null;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     takenAfter?: string;
     takenBefore?: string;
     thumbnailPath?: string;
@@ -859,6 +861,8 @@ export type SmartSearchDto = {
     query: string;
     size?: number;
     state?: string | null;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     takenAfter?: string;
     takenBefore?: string;
     trashedAfter?: string;
@@ -3005,7 +3009,7 @@ export function tagAssets({ id, bulkIdsDto }: {
         body: bulkIdsDto
     })));
 }
-export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagId, timeBucket, userId, withPartners, withStacked }: {
+export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagIds, tagsAnyOrAll, timeBucket, userId, withPartners, withStacked }: {
     albumId?: string;
     isArchived?: boolean;
     isFavorite?: boolean;
@@ -3014,7 +3018,8 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
     order?: AssetOrder;
     personId?: string;
     size: TimeBucketSize;
-    tagId?: string;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     timeBucket: string;
     userId?: string;
     withPartners?: boolean;
@@ -3032,7 +3037,8 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
         order,
         personId,
         size,
-        tagId,
+        tagIds,
+        tagsAnyOrAll,
         timeBucket,
         userId,
         withPartners,
@@ -3041,7 +3047,7 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
         ...opts
     }));
 }
-export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagId, userId, withPartners, withStacked }: {
+export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagIds, tagsAnyOrAll, userId, withPartners, withStacked }: {
     albumId?: string;
     isArchived?: boolean;
     isFavorite?: boolean;
@@ -3050,7 +3056,8 @@ export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key
     order?: AssetOrder;
     personId?: string;
     size: TimeBucketSize;
-    tagId?: string;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     userId?: string;
     withPartners?: boolean;
     withStacked?: boolean;
@@ -3067,7 +3074,8 @@ export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key
         order,
         personId,
         size,
-        tagId,
+        tagIds,
+        tagsAnyOrAll,
         userId,
         withPartners,
         withStacked
@@ -3444,6 +3452,10 @@ export enum PathType {
     Sidecar = "sidecar",
     Face = "face",
     Profile = "profile"
+}
+export enum AnyOrAll {
+    Any = "any",
+    All = "all"
 }
 export enum SearchSuggestionType {
     Country = "country",

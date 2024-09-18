@@ -5,6 +5,7 @@
   import DetailPanelRating from '$lib/components/asset-viewer/detail-panel-star-rating.svelte';
   import DetailPanelTags from '$lib/components/asset-viewer/detail-panel-tags.svelte';
   import Icon from '$lib/components/elements/icon.svelte';
+  import { DetailPanelActions } from '$lib/models/detail-panel-models';
   import ChangeDate from '$lib/components/shared-components/change-date.svelte';
   import { AppRoute, QueryParameter, timeToLoadTheMap } from '$lib/constants';
   import { boundingBoxesArray } from '$lib/stores/people.store';
@@ -49,6 +50,22 @@
   export let asset: AssetResponseDto;
   export let albums: AlbumResponseDto[] = [];
   export let currentAlbum: AlbumResponseDto | null = null;
+  export const handleDetailPanelAction = (action: DetailPanelActions) => {
+    switch (action) {
+      case DetailPanelActions.StartTagging: {
+        startTagging();
+        break;
+      }
+
+      case DetailPanelActions.EditDescription: {
+        editDescription();
+        break;
+      }
+    }
+  };
+
+  let startTagging: () => void;
+  let editDescription: () => void;
 
   const getDimensions = (exifInfo: ExifResponseDto) => {
     const { exifImageWidth: width, exifImageHeight: height } = exifInfo;
@@ -161,7 +178,7 @@
     </section>
   {/if}
 
-  <DetailPanelDescription {asset} {isOwner} />
+  <DetailPanelDescription {asset} {isOwner} bind:editDescription />
   <DetailPanelRating {asset} {isOwner} />
 
   {#if (!isSharedLink() && unassignedFaces.length > 0) || people.length > 0}
@@ -503,7 +520,7 @@
 
 {#if $preferences?.tags?.enabled}
   <section class="relative px-2 pb-12 dark:bg-immich-dark-bg dark:text-immich-dark-fg">
-    <DetailPanelTags {asset} {isOwner} />
+    <DetailPanelTags {asset} {isOwner} bind:startTagging />
   </section>
 {/if}
 

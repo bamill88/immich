@@ -58,6 +58,9 @@ String parameterToString(dynamic value) {
   if (value is AlbumUserRole) {
     return AlbumUserRoleTypeTransformer().encode(value).toString();
   }
+  if (value is AnyOrAll) {
+    return AnyOrAllTypeTransformer().encode(value).toString();
+  }
   if (value is AssetJobName) {
     return AssetJobNameTypeTransformer().encode(value).toString();
   }

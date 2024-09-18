@@ -2,6 +2,7 @@ import { AssetFaceEntity } from 'src/entities/asset-face.entity';
 import { AssetEntity } from 'src/entities/asset.entity';
 import { GeodataPlacesEntity } from 'src/entities/geodata-places.entity';
 import { AssetStatus, AssetType } from 'src/enum';
+import { AnyOrAll } from 'src/interfaces/asset.interface';
 import { Paginated } from 'src/utils/pagination';
 
 export const ISearchRepository = 'ISearchRepository';
@@ -114,6 +115,11 @@ export interface SearchPeopleOptions {
   personIds?: string[];
 }
 
+export interface SearchTagOptions {
+  tagIds?: string[];
+  tagsAnyOrAll?: AnyOrAll;
+}
+
 export interface SearchOrderOptions {
   orderDirection?: 'ASC' | 'DESC';
 }
@@ -130,7 +136,8 @@ type BaseAssetSearchOptions = SearchDateOptions &
   SearchPathOptions &
   SearchStatusOptions &
   SearchUserIdOptions &
-  SearchPeopleOptions;
+  SearchPeopleOptions &
+  SearchTagOptions;
 
 export type AssetSearchOptions = BaseAssetSearchOptions & SearchRelationOptions;
 
@@ -144,7 +151,8 @@ export type SmartSearchOptions = SearchDateOptions &
   SearchOneToOneRelationOptions &
   SearchStatusOptions &
   SearchUserIdOptions &
-  SearchPeopleOptions;
+  SearchPeopleOptions &
+  SearchTagOptions;
 
 export interface FaceEmbeddingSearch extends SearchEmbeddingOptions {
   hasPerson?: boolean;

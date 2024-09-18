@@ -68,8 +68,8 @@ export class TimelineService {
       }
     }
 
-    if (dto.tagId) {
-      await requireAccess(this.access, { auth, permission: Permission.TAG_READ, ids: [dto.tagId] });
+    if (dto.tagIds) {
+      await requireAccess(this.access, { auth, permission: Permission.TAG_READ, ids: dto.tagIds });
     }
 
     if (dto.withPartners) {

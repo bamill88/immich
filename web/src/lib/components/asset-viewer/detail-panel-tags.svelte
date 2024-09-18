@@ -1,31 +1,38 @@
 <script lang="ts">
+  import { focusTrap } from '$lib/actions/focus-trap';
   import Icon from '$lib/components/elements/icon.svelte';
-  import TagAssetForm from '$lib/components/forms/tag-asset-form.svelte';
+  import Combobox from '$lib/components/shared-components/combobox.svelte';
+  import TagChip from '$lib/components/shared-components/tags/tag-chip.svelte';
   import { AppRoute } from '$lib/constants';
   import { isSharedLink } from '$lib/utils';
   import { removeTag, tagAssets } from '$lib/utils/asset-utils';
-  import { getAssetInfo, type AssetResponseDto } from '@immich/sdk';
-  import { mdiClose, mdiPlus } from '@mdi/js';
+  import { getAllTags, getAssetInfo, type AssetResponseDto, type TagResponseDto } from '@immich/sdk';
+  import { mdiPlus } from '@mdi/js';
+  import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
 
   export let asset: AssetResponseDto;
   export let isOwner: boolean;
+  export const startTagging = () => {
+    handleAdd();
+  };
+  let allTags: TagResponseDto[] = [];
 
   $: tags = asset.tags || [];
 
   let isOpen = false;
 
+  onMount(async () => {
+    allTags = await getAllTags();
+  });
+
   const handleAdd = () => (isOpen = true);
 
-  const handleCancel = () => (isOpen = false);
-
-  const handleTag = async (tagIds: string[]) => {
-    const ids = await tagAssets({ tagIds, assetIds: [asset.id], showNotification: false });
-    if (ids) {
-      isOpen = false;
+  const handleTag = async (tagId: string | undefined) => {
+    if (tagId) {
+      await tagAssets({ tagIds: [tagId], assetIds: [asset.id], showNotification: false });
+      asset = await getAssetInfo({ id: asset.id });
     }
-
-    asset = await getAssetInfo({ id: asset.id });
   };
 
   const handleRemove = async (tagId: string) => {
@@ -38,30 +45,27 @@
 
 {#if isOwner && !isSharedLink()}
   <section class="px-4 mt-4">
-    <div class="flex h-10 w-full items-center justify-between text-sm">
+    <div class="flex flex-row h-10 w-full items-center justify-between text-sm">
       <h2>{$t('tags').toUpperCase()}</h2>
+      {#if isOwner && isOpen}
+        <div class="justify-self-end pl-4" use:focusTrap>
+          <Combobox
+            on:select={({ detail: option }) => handleTag(option?.value)}
+            on:close={() => (isOpen = false)}
+            label=""
+            options={allTags.map((tag) => ({ id: tag.id, label: tag.value, value: tag.id }))}
+            placeholder={$t('search_tags')}
+          />
+        </div>
+      {/if}
     </div>
     <section class="flex flex-wrap pt-2 gap-1">
       {#each tags as tag (tag.id)}
-        <div class="flex group transition-all">
-          <a
-            class="inline-block h-min whitespace-nowrap pl-3 pr-1 group-hover:pl-3 py-1 text-center align-baseline leading-none text-gray-100 dark:text-immich-dark-gray bg-immich-primary dark:bg-immich-dark-primary rounded-tl-full rounded-bl-full hover:bg-immich-primary/80 dark:hover:bg-immich-dark-primary/80 transition-all"
-            href={encodeURI(`${AppRoute.TAGS}/?path=${tag.value}`)}
-          >
-            <p class="text-sm">
-              {tag.value}
-            </p>
-          </a>
-
-          <button
-            type="button"
-            class="text-gray-100 dark:text-immich-dark-gray bg-immich-primary/95 dark:bg-immich-dark-primary/95 rounded-tr-full rounded-br-full place-items-center place-content-center pr-2 pl-1 py-1 hover:bg-immich-primary/80 dark:hover:bg-immich-dark-primary/80 transition-all"
-            title="Remove tag"
-            on:click={() => handleRemove(tag.id)}
-          >
-            <Icon path={mdiClose} />
-          </button>
-        </div>
+        <TagChip
+          tag={tag.value}
+          tagUrl={encodeURI(`${AppRoute.TAGS}/?path=${tag.value}`)}
+          handleRemove={() => handleRemove(tag.id)}
+        />
       {/each}
       <button
         type="button"
@@ -73,8 +77,4 @@
       </button>
     </section>
   </section>
-{/if}
-
-{#if isOpen}
-  <TagAssetForm onTag={(tagsIds) => handleTag(tagsIds)} onCancel={handleCancel} />
 {/if}
