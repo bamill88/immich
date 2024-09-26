@@ -48,7 +48,6 @@
 
   // search people
   let showSelectedFaces = false;
-  let allPeople: PersonResponseDto[] = [];
 
   // timers
   let loaderLoadingDoneTimeout: ReturnType<typeof setTimeout>;
@@ -64,8 +63,6 @@
   async function loadPeople() {
     const timeout = setTimeout(() => (isShowLoadingPeople = true), timeBeforeShowLoadingSpinner);
     try {
-      const { people } = await getAllPeople({ withHidden: true });
-      allPeople = people;
       peopleWithFaces = await getFaces({ id: assetId });
     } catch (error) {
       handleError(error, $t('errors.cant_get_faces'));
@@ -332,12 +329,12 @@
 
 {#if showSelectedFaces}
   <AssignFaceSidePanel
-    {allPeople}
     {editedFace}
     {assetId}
     {assetType}
     on:close={() => (showSelectedFaces = false)}
     on:createPerson={(event) => handleCreatePerson(event.detail)}
     on:reassign={(event) => handleReassignFace(event.detail)}
+    on:showLoading={(isLoading) => (isShowLoadingDone = !isLoading)}
   />
 {/if}

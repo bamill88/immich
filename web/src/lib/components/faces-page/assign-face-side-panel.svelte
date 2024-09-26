@@ -1,10 +1,16 @@
 <script lang="ts">
   import { timeBeforeShowLoadingSpinner } from '$lib/constants';
   import { getPersonNameWithHiddenValue } from '$lib/utils/person';
-  import { getPeopleThumbnailUrl } from '$lib/utils';
-  import { AssetTypeEnum, type AssetFaceResponseDto, type PersonResponseDto } from '@immich/sdk';
+  import { getPeopleThumbnailUrl, handlePromiseError } from '$lib/utils';
+  import {
+    AssetTypeEnum,
+    getAllPeople,
+    type AssetFaceResponseDto,
+    type PeopleResponseDto,
+    type PersonResponseDto,
+  } from '@immich/sdk';
   import { mdiArrowLeftThin, mdiClose, mdiMagnify, mdiPlus } from '@mdi/js';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { linear } from 'svelte/easing';
   import { fly } from 'svelte/transition';
   import { photoViewer } from '$lib/stores/assets.store';
@@ -14,31 +20,61 @@
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import { zoomImageToBase64 } from '$lib/utils/people-utils';
   import { t } from 'svelte-i18n';
+  import { handleError } from '$lib/utils/handle-error';
 
-  export let allPeople: PersonResponseDto[];
   export let editedFace: AssetFaceResponseDto;
   export let assetId: string;
   export let assetType: AssetTypeEnum;
 
   // loading spinners
   let isShowLoadingNewPerson = false;
+  let isShowLoadingPeople = false;
   let isShowLoadingSearch = false;
 
   // search people
+  let searchedPeopleHasNextPage = false;
+  let searchedPeoplePage = 1;
   let searchedPeople: PersonResponseDto[] = [];
   let searchFaces = false;
   let searchName = '';
 
-  $: showPeople = searchName ? searchedPeople : allPeople.filter((person) => !person.isHidden);
-
   const dispatch = createEventDispatcher<{
     close: void;
     createPerson: string | null;
+    personThumbnail: string;
     reassign: PersonResponseDto;
   }>();
   const handleBackButton = () => {
     dispatch('close');
   };
+
+  onMount(() => {
+    handlePromiseError(doPeopleSearch());
+  });
+
+  class PeopleSearchOptions {
+    page: number = 1;
+    size: number = 10;
+    append: boolean = false;
+  }
+
+  async function doPeopleSearch(options?: Partial<PeopleSearchOptions>) {
+    const { page, size, append } = { ...new PeopleSearchOptions(), ...options };
+    const timeout = setTimeout(() => (isShowLoadingPeople = true), timeBeforeShowLoadingSpinner);
+    try {
+      const response = await getAllPeople({ withHidden: false, size, page });
+      if (!append) {
+        searchedPeople = [];
+      }
+      searchedPeople = [...searchedPeople, ...response.people];
+      searchedPeopleHasNextPage = response.hasNextPage || false;
+    } catch (error) {
+      handleError(error, $t('errors.cant_get_faces'));
+    } finally {
+      clearTimeout(timeout);
+    }
+    isShowLoadingPeople = false;
+  }
 
   const handleCreatePerson = async () => {
     const timeout = setTimeout(() => (isShowLoadingNewPerson = true), timeBeforeShowLoadingSpinner);
@@ -50,6 +86,11 @@
     clearTimeout(timeout);
     isShowLoadingNewPerson = false;
     dispatch('createPerson', newFeaturePhoto);
+  };
+
+  const handleGetNextPage = async () => {
+    searchedPeoplePage++;
+    await doPeopleSearch({ page: searchedPeoplePage, append: true });
   };
 </script>
 
@@ -100,7 +141,7 @@
   <div class="px-4 py-4 text-sm">
     <h2 class="mb-8 mt-4 uppercase">{$t('all_people')}</h2>
     <div class="immich-scrollbar mt-4 flex flex-wrap gap-2 overflow-y-auto">
-      {#each showPeople as person (person.id)}
+      {#each searchedPeople as person (person.id)}
         {#if !editedFace.person || person.id !== editedFace.person.id}
           <div class="w-fit">
             <button type="button" class="w-[90px]" on:click={() => dispatch('reassign', person)}>
@@ -124,6 +165,11 @@
           </div>
         {/if}
       {/each}
+      {#if searchedPeopleHasNextPage}
+        <div class="w-full py-4 flex align-center">
+          <button type="button" on:click={() => handleGetNextPage()}>Get Next Page</button>
+        </div>
+      {/if}
     </div>
   </div>
 </section>
