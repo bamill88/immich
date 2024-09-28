@@ -37,14 +37,16 @@ class TimelineApi {
   ///
   /// * [String] personId:
   ///
-  /// * [String] tagId:
+  /// * [List<String>] tagIds:
+  ///
+  /// * [AnyOrAll] tagsAnyOrAll:
   ///
   /// * [String] userId:
   ///
   /// * [bool] withPartners:
   ///
   /// * [bool] withStacked:
-  Future<Response> getTimeBucketWithHttpInfo(TimeBucketSize size, String timeBucket, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, String? tagId, String? userId, bool? withPartners, bool? withStacked, }) async {
+  Future<Response> getTimeBucketWithHttpInfo(TimeBucketSize size, String timeBucket, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, List<String>? tagIds, AnyOrAll? tagsAnyOrAll, String? userId, bool? withPartners, bool? withStacked, }) async {
     // ignore: prefer_const_declarations
     final path = r'/timeline/bucket';
 
@@ -77,8 +79,11 @@ class TimelineApi {
       queryParams.addAll(_queryParams('', 'personId', personId));
     }
       queryParams.addAll(_queryParams('', 'size', size));
-    if (tagId != null) {
-      queryParams.addAll(_queryParams('', 'tagId', tagId));
+    if (tagIds != null) {
+      queryParams.addAll(_queryParams('multi', 'tagIds', tagIds));
+    }
+    if (tagsAnyOrAll != null) {
+      queryParams.addAll(_queryParams('', 'tagsAnyOrAll', tagsAnyOrAll));
     }
       queryParams.addAll(_queryParams('', 'timeBucket', timeBucket));
     if (userId != null) {
@@ -125,15 +130,17 @@ class TimelineApi {
   ///
   /// * [String] personId:
   ///
-  /// * [String] tagId:
+  /// * [List<String>] tagIds:
+  ///
+  /// * [AnyOrAll] tagsAnyOrAll:
   ///
   /// * [String] userId:
   ///
   /// * [bool] withPartners:
   ///
   /// * [bool] withStacked:
-  Future<List<AssetResponseDto>?> getTimeBucket(TimeBucketSize size, String timeBucket, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, String? tagId, String? userId, bool? withPartners, bool? withStacked, }) async {
-    final response = await getTimeBucketWithHttpInfo(size, timeBucket,  albumId: albumId, isArchived: isArchived, isFavorite: isFavorite, isTrashed: isTrashed, key: key, order: order, personId: personId, tagId: tagId, userId: userId, withPartners: withPartners, withStacked: withStacked, );
+  Future<List<AssetResponseDto>?> getTimeBucket(TimeBucketSize size, String timeBucket, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, List<String>? tagIds, AnyOrAll? tagsAnyOrAll, String? userId, bool? withPartners, bool? withStacked, }) async {
+    final response = await getTimeBucketWithHttpInfo(size, timeBucket,  albumId: albumId, isArchived: isArchived, isFavorite: isFavorite, isTrashed: isTrashed, key: key, order: order, personId: personId, tagIds: tagIds, tagsAnyOrAll: tagsAnyOrAll, userId: userId, withPartners: withPartners, withStacked: withStacked, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -169,14 +176,16 @@ class TimelineApi {
   ///
   /// * [String] personId:
   ///
-  /// * [String] tagId:
+  /// * [List<String>] tagIds:
+  ///
+  /// * [AnyOrAll] tagsAnyOrAll:
   ///
   /// * [String] userId:
   ///
   /// * [bool] withPartners:
   ///
   /// * [bool] withStacked:
-  Future<Response> getTimeBucketsWithHttpInfo(TimeBucketSize size, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, String? tagId, String? userId, bool? withPartners, bool? withStacked, }) async {
+  Future<Response> getTimeBucketsWithHttpInfo(TimeBucketSize size, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, List<String>? tagIds, AnyOrAll? tagsAnyOrAll, String? userId, bool? withPartners, bool? withStacked, }) async {
     // ignore: prefer_const_declarations
     final path = r'/timeline/buckets';
 
@@ -209,8 +218,11 @@ class TimelineApi {
       queryParams.addAll(_queryParams('', 'personId', personId));
     }
       queryParams.addAll(_queryParams('', 'size', size));
-    if (tagId != null) {
-      queryParams.addAll(_queryParams('', 'tagId', tagId));
+    if (tagIds != null) {
+      queryParams.addAll(_queryParams('multi', 'tagIds', tagIds));
+    }
+    if (tagsAnyOrAll != null) {
+      queryParams.addAll(_queryParams('', 'tagsAnyOrAll', tagsAnyOrAll));
     }
     if (userId != null) {
       queryParams.addAll(_queryParams('', 'userId', userId));
@@ -254,15 +266,17 @@ class TimelineApi {
   ///
   /// * [String] personId:
   ///
-  /// * [String] tagId:
+  /// * [List<String>] tagIds:
+  ///
+  /// * [AnyOrAll] tagsAnyOrAll:
   ///
   /// * [String] userId:
   ///
   /// * [bool] withPartners:
   ///
   /// * [bool] withStacked:
-  Future<List<TimeBucketResponseDto>?> getTimeBuckets(TimeBucketSize size, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, String? tagId, String? userId, bool? withPartners, bool? withStacked, }) async {
-    final response = await getTimeBucketsWithHttpInfo(size,  albumId: albumId, isArchived: isArchived, isFavorite: isFavorite, isTrashed: isTrashed, key: key, order: order, personId: personId, tagId: tagId, userId: userId, withPartners: withPartners, withStacked: withStacked, );
+  Future<List<TimeBucketResponseDto>?> getTimeBuckets(TimeBucketSize size, { String? albumId, bool? isArchived, bool? isFavorite, bool? isTrashed, String? key, AssetOrder? order, String? personId, List<String>? tagIds, AnyOrAll? tagsAnyOrAll, String? userId, bool? withPartners, bool? withStacked, }) async {
+    final response = await getTimeBucketsWithHttpInfo(size,  albumId: albumId, isArchived: isArchived, isFavorite: isFavorite, isTrashed: isTrashed, key: key, order: order, personId: personId, tagIds: tagIds, tagsAnyOrAll: tagsAnyOrAll, userId: userId, withPartners: withPartners, withStacked: withStacked, );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

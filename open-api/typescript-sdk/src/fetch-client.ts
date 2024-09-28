@@ -366,6 +366,7 @@ export type AssetMediaCreateDto = {
     fileModifiedAt: string;
     isArchived?: boolean;
     isFavorite?: boolean;
+    isOffline?: boolean;
     isVisible?: boolean;
     livePhotoVideoId?: string;
     sidecarData?: Blob;
@@ -578,6 +579,10 @@ export type UpdateLibraryDto = {
     importPaths?: string[];
     name?: string;
 };
+export type ScanLibraryDto = {
+    refreshAllFiles?: boolean;
+    refreshModifiedFiles?: boolean;
+};
 export type LibraryStatsResponseDto = {
     photos: number;
     total: number;
@@ -650,9 +655,6 @@ export type SystemConfigSmtpDto = {
     "from": string;
     replyTo: string;
     transport: SystemConfigSmtpTransportDto;
-};
-export type TestEmailResponseDto = {
-    messageId: string;
 };
 export type OAuthConfigDto = {
     redirectUri: string;
@@ -789,6 +791,8 @@ export type MetadataSearchDto = {
     previewPath?: string;
     size?: number;
     state?: string | null;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     takenAfter?: string;
     takenBefore?: string;
     thumbnailPath?: string;
@@ -835,40 +839,6 @@ export type PlacesResponseDto = {
     longitude: number;
     name: string;
 };
-export type RandomSearchDto = {
-    city?: string | null;
-    country?: string | null;
-    createdAfter?: string;
-    createdBefore?: string;
-    deviceId?: string;
-    isArchived?: boolean;
-    isEncoded?: boolean;
-    isFavorite?: boolean;
-    isMotion?: boolean;
-    isNotInAlbum?: boolean;
-    isOffline?: boolean;
-    isVisible?: boolean;
-    lensModel?: string | null;
-    libraryId?: string | null;
-    make?: string;
-    model?: string | null;
-    page?: number;
-    personIds?: string[];
-    size?: number;
-    state?: string | null;
-    takenAfter?: string;
-    takenBefore?: string;
-    trashedAfter?: string;
-    trashedBefore?: string;
-    "type"?: AssetTypeEnum;
-    updatedAfter?: string;
-    updatedBefore?: string;
-    withArchived?: boolean;
-    withDeleted?: boolean;
-    withExif?: boolean;
-    withPeople?: boolean;
-    withStacked?: boolean;
-};
 export type SmartSearchDto = {
     city?: string | null;
     country?: string | null;
@@ -891,6 +861,8 @@ export type SmartSearchDto = {
     query: string;
     size?: number;
     state?: string | null;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     takenAfter?: string;
     takenBefore?: string;
     trashedAfter?: string;
@@ -926,8 +898,6 @@ export type ServerConfigDto = {
     isInitialized: boolean;
     isOnboarded: boolean;
     loginPageMessage: string;
-    mapDarkStyleUrl: string;
-    mapLightStyleUrl: string;
     oauthButtonText: string;
     trashDays: number;
     userDeleteDelay: number;
@@ -1100,16 +1070,14 @@ export type SystemConfigFFmpegDto = {
     transcode: TranscodePolicy;
     twoPass: boolean;
 };
-export type SystemConfigGeneratedImageDto = {
-    format: ImageFormat;
-    quality: number;
-    size: number;
-};
 export type SystemConfigImageDto = {
     colorspace: Colorspace;
     extractEmbedded: boolean;
-    preview: SystemConfigGeneratedImageDto;
-    thumbnail: SystemConfigGeneratedImageDto;
+    previewFormat: ImageFormat;
+    previewSize: number;
+    quality: number;
+    thumbnailFormat: ImageFormat;
+    thumbnailSize: number;
 };
 export type JobSettingsDto = {
     concurrency: number;
@@ -1732,9 +1700,6 @@ export function getMemoryLane({ day, month }: {
         ...opts
     }));
 }
-/**
- * This property was deprecated in v1.116.0
- */
 export function getRandom({ count }: {
     count?: number;
 }, opts?: Oazapfts.RequestOpts) {
@@ -2063,13 +2028,23 @@ export function updateLibrary({ id, updateLibraryDto }: {
         body: updateLibraryDto
     })));
 }
-export function scanLibrary({ id }: {
+export function removeOfflineFiles({ id }: {
     id: string;
 }, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchText(`/libraries/${encodeURIComponent(id)}/scan`, {
+    return oazapfts.ok(oazapfts.fetchText(`/libraries/${encodeURIComponent(id)}/removeOffline`, {
         ...opts,
         method: "POST"
     }));
+}
+export function scanLibrary({ id, scanLibraryDto }: {
+    id: string;
+    scanLibraryDto: ScanLibraryDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchText(`/libraries/${encodeURIComponent(id)}/scan`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: scanLibraryDto
+    })));
 }
 export function getLibraryStatistics({ id }: {
     id: string;
@@ -2126,6 +2101,20 @@ export function reverseGeocode({ lat, lon }: {
     }>(`/map/reverse-geocode${QS.query(QS.explode({
         lat,
         lon
+    }))}`, {
+        ...opts
+    }));
+}
+export function getMapStyle({ key, theme }: {
+    key?: string;
+    theme: MapTheme;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: object;
+    }>(`/map/style.json${QS.query(QS.explode({
+        key,
+        theme
     }))}`, {
         ...opts
     }));
@@ -2210,10 +2199,7 @@ export function addMemoryAssets({ id, bulkIdsDto }: {
 export function sendTestEmail({ systemConfigSmtpDto }: {
     systemConfigSmtpDto: SystemConfigSmtpDto;
 }, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchJson<{
-        status: 200;
-        data: TestEmailResponseDto;
-    }>("/notifications/test-email", oazapfts.json({
+    return oazapfts.ok(oazapfts.fetchText("/notifications/test-email", oazapfts.json({
         ...opts,
         method: "POST",
         body: systemConfigSmtpDto
@@ -2517,18 +2503,6 @@ export function searchPlaces({ name }: {
     }))}`, {
         ...opts
     }));
-}
-export function searchRandom({ randomSearchDto }: {
-    randomSearchDto: RandomSearchDto;
-}, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.ok(oazapfts.fetchJson<{
-        status: 200;
-        data: SearchResponseDto;
-    }>("/search/random", oazapfts.json({
-        ...opts,
-        method: "POST",
-        body: randomSearchDto
-    })));
 }
 export function searchSmart({ smartSearchDto }: {
     smartSearchDto: SmartSearchDto;
@@ -3035,7 +3009,7 @@ export function tagAssets({ id, bulkIdsDto }: {
         body: bulkIdsDto
     })));
 }
-export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagId, timeBucket, userId, withPartners, withStacked }: {
+export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagIds, tagsAnyOrAll, timeBucket, userId, withPartners, withStacked }: {
     albumId?: string;
     isArchived?: boolean;
     isFavorite?: boolean;
@@ -3044,7 +3018,8 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
     order?: AssetOrder;
     personId?: string;
     size: TimeBucketSize;
-    tagId?: string;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     timeBucket: string;
     userId?: string;
     withPartners?: boolean;
@@ -3062,7 +3037,8 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
         order,
         personId,
         size,
-        tagId,
+        tagIds,
+        tagsAnyOrAll,
         timeBucket,
         userId,
         withPartners,
@@ -3071,7 +3047,7 @@ export function getTimeBucket({ albumId, isArchived, isFavorite, isTrashed, key,
         ...opts
     }));
 }
-export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagId, userId, withPartners, withStacked }: {
+export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key, order, personId, size, tagIds, tagsAnyOrAll, userId, withPartners, withStacked }: {
     albumId?: string;
     isArchived?: boolean;
     isFavorite?: boolean;
@@ -3080,7 +3056,8 @@ export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key
     order?: AssetOrder;
     personId?: string;
     size: TimeBucketSize;
-    tagId?: string;
+    tagIds?: string[];
+    tagsAnyOrAll?: AnyOrAll;
     userId?: string;
     withPartners?: boolean;
     withStacked?: boolean;
@@ -3097,7 +3074,8 @@ export function getTimeBuckets({ albumId, isArchived, isFavorite, isTrashed, key
         order,
         personId,
         size,
-        tagId,
+        tagIds,
+        tagsAnyOrAll,
         userId,
         withPartners,
         withStacked
@@ -3450,6 +3428,10 @@ export enum JobCommand {
     Empty = "empty",
     ClearFailed = "clear-failed"
 }
+export enum MapTheme {
+    Light = "light",
+    Dark = "dark"
+}
 export enum MemoryType {
     OnThisDay = "on_this_day"
 }
@@ -3470,6 +3452,10 @@ export enum PathType {
     Sidecar = "sidecar",
     Face = "face",
     Profile = "profile"
+}
+export enum AnyOrAll {
+    Any = "any",
+    All = "all"
 }
 export enum SearchSuggestionType {
     Country = "country",

@@ -6,6 +6,7 @@ import { AlbumResponseDto } from 'src/dtos/album.dto';
 import { AssetResponseDto } from 'src/dtos/asset-response.dto';
 import { GeodataPlacesEntity } from 'src/entities/geodata-places.entity';
 import { AssetOrder, AssetType } from 'src/enum';
+import { AnyOrAll } from 'src/interfaces/asset.interface';
 import { Optional, ValidateBoolean, ValidateDate, ValidateUUID } from 'src/validation';
 
 class BaseSearchDto {
@@ -117,6 +118,14 @@ class BaseSearchDto {
 
   @ValidateUUID({ each: true, optional: true })
   personIds?: string[];
+
+  @ValidateUUID({ each: true, optional: true })
+  tagIds?: string[];
+
+  @IsEnum(AnyOrAll)
+  @Optional()
+  @ApiProperty({ enumName: 'AnyOrAll', enum: AnyOrAll })
+  tagsAnyOrAll?: AnyOrAll;
 }
 
 export class RandomSearchDto extends BaseSearchDto {

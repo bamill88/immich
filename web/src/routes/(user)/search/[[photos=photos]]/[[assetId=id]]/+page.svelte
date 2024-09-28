@@ -41,6 +41,8 @@
   import { isAlbumsRoute, isPeopleRoute } from '$lib/utils/navigation';
   import { t } from 'svelte-i18n';
   import { afterUpdate, tick } from 'svelte';
+  import type { PageData } from './$types';
+  import Chip from '$lib/components/shared-components/chip.svelte';
 
   const MAX_ASSET_COUNT = 5000;
   let { isViewing: showAssetViewer } = assetViewingStore;
@@ -109,6 +111,19 @@
   $: isAllArchived = [...selectedAssets].every((asset) => asset.isArchived);
   $: isAllFavorite = [...selectedAssets].every((asset) => asset.isFavorite);
 
+  export let data: PageData;
+  $: allTags = data.allTags;
+  $: tagMap = Object.fromEntries(allTags.map((tag) => [tag.id, tag]));
+
+  interface SearchTerm {
+    Key: keyof SearchTerms;
+    TermKey: string;
+    Value: string;
+    Id: string;
+  }
+
+  let termsMap: SearchTerm[] = [];
+
   const onAssetDelete = (assetIds: string[]) => {
     const assetIdSet = new Set(assetIds);
     searchResultAssets = searchResultAssets.filter((a: AssetResponseDto) => !assetIdSet.has(a.id));
@@ -131,6 +146,7 @@
     nextPage = 1;
     searchResultAssets = [];
     searchResultAlbums = [];
+    await loadSearchTermChips();
     await loadNextPage();
   }
 
@@ -193,6 +209,8 @@
       make: $t('camera_brand'),
       model: $t('camera_model'),
       personIds: $t('people'),
+      tagIds: $t('tag'),
+      tagsAnyOrAll: $t('tag_search_type'),
       originalFileName: $t('file_name'),
     };
     return keyMap[key] || key;
@@ -218,6 +236,86 @@
 
   function getObjectKeys<T extends object>(obj: T): (keyof T)[] {
     return Object.keys(obj) as (keyof T)[];
+  }
+
+  function removeTermFromSearch(key: keyof SearchTerms, id: string): void {
+    if (!terms || !terms.tagIds) {
+      return;
+    }
+
+    switch (key) {
+      case 'tagIds': {
+        terms.tagIds = terms.tagIds.filter((t) => t !== id);
+        if (!terms.tagIds || terms.tagIds.length === 0) {
+          delete terms['tagsAnyOrAll'];
+        }
+        break;
+      }
+
+      default: {
+        delete terms[key];
+        break;
+      }
+    }
+
+    terms = terms;
+  }
+
+  async function loadSearchTermChips() {
+    if (!terms) {
+      return;
+    }
+    termsMap = [];
+    for (let key of getObjectKeys(terms)) {
+      const termKey = getHumanReadableSearchKey(key);
+      const termValue = terms[key] as string;
+      let outputValue = '';
+      let outputId = '';
+
+      if ((key === 'takenAfter' || key === 'takenBefore') && typeof termValue === 'string') {
+        outputValue = getHumanReadableDate(termValue);
+      } else if (key === 'personIds' && Array.isArray(termValue)) {
+        for (let personId of termValue) {
+          const personName = await getPersonName([personId]);
+          termsMap.push({
+            TermKey: termKey,
+            Key: key,
+            Value: personName,
+            Id: personId,
+          });
+        }
+        continue;
+      } else if (key === 'tagIds' && Array.isArray(termValue)) {
+        for (let tagId of termValue) {
+          termsMap.push({
+            TermKey: termKey,
+            Key: key,
+            Value: tagMap[tagId].value,
+            Id: tagMap[tagId].id,
+          });
+        }
+        continue;
+      } else if (key === 'tagsAnyOrAll') {
+        // Only show chip for tagsAnyOrAll if there are tags
+        if (terms.tagIds && Array.isArray(terms.tagIds)) {
+          outputValue = termValue;
+        }
+        continue;
+      } else if (termValue === null || termValue === '') {
+        outputValue = $t('unknown');
+      } else {
+        outputValue = termValue;
+      }
+
+      termsMap.push({
+        TermKey: termKey,
+        Key: key,
+        Value: outputValue,
+        Id: outputId,
+      });
+    }
+
+    termsMap = termsMap;
   }
 </script>
 
@@ -259,32 +357,8 @@
   id="search-chips"
   class="mt-24 text-center w-full flex gap-5 place-content-center place-items-center flex-wrap px-24"
 >
-  {#each getObjectKeys(terms) as key (key)}
-    {@const value = terms[key]}
-    <div class="flex place-content-center place-items-center text-xs">
-      <div
-        class="bg-immich-primary py-2 px-4 text-white dark:text-black dark:bg-immich-dark-primary
-          {value === true ? 'rounded-full' : 'rounded-tl-full rounded-bl-full'}"
-      >
-        {getHumanReadableSearchKey(key)}
-      </div>
-
-      {#if value !== true}
-        <div class="bg-gray-300 py-2 px-4 dark:bg-gray-800 dark:text-white rounded-tr-full rounded-br-full">
-          {#if (key === 'takenAfter' || key === 'takenBefore') && typeof value === 'string'}
-            {getHumanReadableDate(value)}
-          {:else if key === 'personIds' && Array.isArray(value)}
-            {#await getPersonName(value) then personName}
-              {personName}
-            {/await}
-          {:else if value === null || value === ''}
-            {$t('unknown')}
-          {:else}
-            {value}
-          {/if}
-        </div>
-      {/if}
-    </div>
+  {#each termsMap as term (term)}
+    <Chip key={term.TermKey} value={term.Value} handleRemove={() => removeTermFromSearch(term.Key, term.Id)} />
   {/each}
 </section>
 

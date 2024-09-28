@@ -704,7 +704,8 @@ export class AssetStore {
         return;
       }
 
-      bucket = await this.loadBucketAtTime(asset.localDateTime, { preventCancel: true, pending: true });
+      await this.loadBucket(asset.originalPath.replace(asset.originalFileName, ''), { preventCancel: true, pending: true });
+      bucket = this.assetToBucket[id].bucket;
     }
 
     if (bucket && bucket.assets.some((a) => a.id === id)) {
@@ -750,15 +751,16 @@ export class AssetStore {
   }
 
   private async getBucketInfoForAsset(
-    { id, localDateTime }: Pick<AssetResponseDto, 'id' | 'localDateTime'>,
+    { id, originalPath, originalFileName }: Pick<AssetResponseDto, 'id' | 'originalPath' | 'originalFileName'>,
     options: { preventCancel?: boolean; pending?: boolean } = {},
   ) {
-    const bucketInfo = this.assetToBucket[id];
+    const bucketId = originalPath.replace(originalFileName, '');
+    const bucketInfo = this.assetToBucket[bucketId];
     if (bucketInfo) {
       return bucketInfo;
     }
-    await this.loadBucketAtTime(localDateTime, options);
-    return this.assetToBucket[id] || null;
+    await this.loadBucket(bucketId, options);
+    return this.assetToBucket[bucketId] || null;
   }
 
   getBucketIndexByAssetId(assetId: string) {

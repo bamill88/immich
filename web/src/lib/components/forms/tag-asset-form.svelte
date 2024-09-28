@@ -6,9 +6,12 @@
   import FullScreenModal from '../shared-components/full-screen-modal.svelte';
   import { onMount } from 'svelte';
   import { getAllTags, type TagResponseDto } from '@immich/sdk';
+  import { mdiArrowCollapse } from '@mdi/js';
   import Icon from '$lib/components/elements/icon.svelte';
   import { AppRoute } from '$lib/constants';
   import FormatMessage from '$lib/components/i18n/format-message.svelte';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
+  import { tagAssetModal } from '$lib/stores/preferences.store';
 
   export let onTag: (tagIds: string[]) => void;
   export let onCancel: () => void;
@@ -37,9 +40,16 @@
     selectedIds.delete(tag);
     selectedIds = selectedIds;
   };
+
+  const handleUseSidebarTagging = () => {
+    tagAssetModal.set(false);
+  };
 </script>
 
 <FullScreenModal title={$t('tag_assets')} icon={mdiTag} onClose={onCancel}>
+  <svelte:fragment slot="modal-controls">
+    <CircleIconButton on:click={handleUseSidebarTagging} title="Use Sidebar Tagging" icon={mdiArrowCollapse} />
+  </svelte:fragment>
   <div class="text-sm">
     <p>
       <FormatMessage key="tag_not_found_question" let:message>

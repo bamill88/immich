@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import { AssetEntity } from 'src/entities/asset.entity';
+import { AnyOrAll } from 'src/interfaces/asset.interface';
 import { AssetSearchBuilderOptions } from 'src/interfaces/search.interface';
+import { uniqueFilter } from 'src/utils/misc';
 import { Between, IsNull, LessThanOrEqual, MoreThanOrEqual, Not, SelectQueryBuilder } from 'typeorm';
 
 /**
@@ -91,6 +93,8 @@ export function searchAssetBuilder(
     withPeople,
     withSmartInfo,
     personIds,
+    tagIds,
+    tagsAnyOrAll,
     withExif,
     withStacked,
     trashedAfter,
@@ -133,9 +137,32 @@ export function searchAssetBuilder(
       .andWhere('faces.personId IN (:...personIds)', { personIds })
       .addGroupBy(`${builder.alias}.id`)
       .having('COUNT(DISTINCT faces.personId) = :personCount', { personCount: personIds.length });
+  }
+  
+  if (tagIds && tagIds.length > 0) {
+    const uniqueTagIds = tagIds.filter((val, ind, self) => uniqueFilter(val, ind, self));
 
-    if (withExif) {
-      builder.addGroupBy('exifInfo.assetId');
+    if (tagsAnyOrAll === AnyOrAll.ALL) {
+      builder.innerJoinAndSelect(
+        (qb) =>
+          qb
+            .select('ARRAY_AGG(tag_asset.assetsId)', 'assetsIds')
+            .from('tag_asset', 'tag_asset')
+            .where('tag_asset.tagsId IN (SELECT id_descendant FROM tags_closure WHERE id_ancestor IN (:...tagIds))', {
+              tagIds: uniqueTagIds,
+            })
+            .groupBy('tag_asset.assetsId')
+            .having('COUNT(tag_asset.tagsId) = :tagsCount', { tagsCount: uniqueTagIds.length }), // match the count to # of unique tags to query all tags
+        'asset_tags',
+        'asset.id = ANY("asset_tags"."assetsIds")',
+      );
+    } else {
+      builder.innerJoin(
+        'asset.tags',
+        'asset_tags',
+        'asset_tags.id IN (SELECT id_descendant FROM tags_closure WHERE id_ancestor IN (:...tagIds))',
+        { tagIds },
+      );
     }
   }
 

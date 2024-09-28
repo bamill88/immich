@@ -236,3 +236,7 @@ export const useSwagger = (app: INestApplication, force = false) => {
     writeFileSync(outputPath, JSON.stringify(patchOpenAPI(specification), null, 2), { encoding: 'utf8' });
   }
 };
+
+export const uniqueFilter = (value: string, index: number, self: string[]): boolean => {
+  return self.indexOf(value) === index;
+};

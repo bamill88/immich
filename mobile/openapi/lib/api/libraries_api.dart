@@ -243,13 +243,13 @@ class LibrariesApi {
     return null;
   }
 
-  /// Performs an HTTP 'POST /libraries/{id}/scan' operation and returns the [Response].
+  /// Performs an HTTP 'POST /libraries/{id}/removeOffline' operation and returns the [Response].
   /// Parameters:
   ///
   /// * [String] id (required):
-  Future<Response> scanLibraryWithHttpInfo(String id,) async {
+  Future<Response> removeOfflineFilesWithHttpInfo(String id,) async {
     // ignore: prefer_const_declarations
-    final path = r'/libraries/{id}/scan'
+    final path = r'/libraries/{id}/removeOffline'
       .replaceAll('{id}', id);
 
     // ignore: prefer_final_locals
@@ -276,8 +276,52 @@ class LibrariesApi {
   /// Parameters:
   ///
   /// * [String] id (required):
-  Future<void> scanLibrary(String id,) async {
-    final response = await scanLibraryWithHttpInfo(id,);
+  Future<void> removeOfflineFiles(String id,) async {
+    final response = await removeOfflineFilesWithHttpInfo(id,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+  }
+
+  /// Performs an HTTP 'POST /libraries/{id}/scan' operation and returns the [Response].
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [ScanLibraryDto] scanLibraryDto (required):
+  Future<Response> scanLibraryWithHttpInfo(String id, ScanLibraryDto scanLibraryDto,) async {
+    // ignore: prefer_const_declarations
+    final path = r'/libraries/{id}/scan'
+      .replaceAll('{id}', id);
+
+    // ignore: prefer_final_locals
+    Object? postBody = scanLibraryDto;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+    );
+  }
+
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [ScanLibraryDto] scanLibraryDto (required):
+  Future<void> scanLibrary(String id, ScanLibraryDto scanLibraryDto,) async {
+    final response = await scanLibraryWithHttpInfo(id, scanLibraryDto,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

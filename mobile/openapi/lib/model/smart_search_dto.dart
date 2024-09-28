@@ -34,6 +34,8 @@ class SmartSearchDto {
     required this.query,
     this.size,
     this.state,
+    this.tagIds = const [],
+    this.tagsAnyOrAll,
     this.takenAfter,
     this.takenBefore,
     this.trashedAfter,
@@ -169,6 +171,16 @@ class SmartSearchDto {
 
   String? state;
 
+  List<String> tagIds;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  AnyOrAll? tagsAnyOrAll;
+
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -266,6 +278,8 @@ class SmartSearchDto {
     other.query == query &&
     other.size == size &&
     other.state == state &&
+    _deepEquality.equals(other.tagIds, tagIds) &&
+    other.tagsAnyOrAll == tagsAnyOrAll &&
     other.takenAfter == takenAfter &&
     other.takenBefore == takenBefore &&
     other.trashedAfter == trashedAfter &&
@@ -301,6 +315,8 @@ class SmartSearchDto {
     (query.hashCode) +
     (size == null ? 0 : size!.hashCode) +
     (state == null ? 0 : state!.hashCode) +
+    (tagIds.hashCode) +
+    (tagsAnyOrAll == null ? 0 : tagsAnyOrAll!.hashCode) +
     (takenAfter == null ? 0 : takenAfter!.hashCode) +
     (takenBefore == null ? 0 : takenBefore!.hashCode) +
     (trashedAfter == null ? 0 : trashedAfter!.hashCode) +
@@ -313,7 +329,7 @@ class SmartSearchDto {
     (withExif == null ? 0 : withExif!.hashCode);
 
   @override
-  String toString() => 'SmartSearchDto[city=$city, country=$country, createdAfter=$createdAfter, createdBefore=$createdBefore, deviceId=$deviceId, isArchived=$isArchived, isEncoded=$isEncoded, isFavorite=$isFavorite, isMotion=$isMotion, isNotInAlbum=$isNotInAlbum, isOffline=$isOffline, isVisible=$isVisible, lensModel=$lensModel, libraryId=$libraryId, make=$make, model=$model, page=$page, personIds=$personIds, query=$query, size=$size, state=$state, takenAfter=$takenAfter, takenBefore=$takenBefore, trashedAfter=$trashedAfter, trashedBefore=$trashedBefore, type=$type, updatedAfter=$updatedAfter, updatedBefore=$updatedBefore, withArchived=$withArchived, withDeleted=$withDeleted, withExif=$withExif]';
+  String toString() => 'SmartSearchDto[city=$city, country=$country, createdAfter=$createdAfter, createdBefore=$createdBefore, deviceId=$deviceId, isArchived=$isArchived, isEncoded=$isEncoded, isFavorite=$isFavorite, isMotion=$isMotion, isNotInAlbum=$isNotInAlbum, isOffline=$isOffline, isVisible=$isVisible, lensModel=$lensModel, libraryId=$libraryId, make=$make, model=$model, page=$page, personIds=$personIds, query=$query, size=$size, state=$state, tagIds=$tagIds, tagsAnyOrAll=$tagsAnyOrAll, takenAfter=$takenAfter, takenBefore=$takenBefore, trashedAfter=$trashedAfter, trashedBefore=$trashedBefore, type=$type, updatedAfter=$updatedAfter, updatedBefore=$updatedBefore, withArchived=$withArchived, withDeleted=$withDeleted, withExif=$withExif]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -414,6 +430,12 @@ class SmartSearchDto {
     } else {
     //  json[r'state'] = null;
     }
+      json[r'tagIds'] = this.tagIds;
+    if (this.tagsAnyOrAll != null) {
+      json[r'tagsAnyOrAll'] = this.tagsAnyOrAll;
+    } else {
+    //  json[r'tagsAnyOrAll'] = null;
+    }
     if (this.takenAfter != null) {
       json[r'takenAfter'] = this.takenAfter!.toUtc().toIso8601String();
     } else {
@@ -495,6 +517,10 @@ class SmartSearchDto {
         query: mapValueOfType<String>(json, r'query')!,
         size: num.parse('${json[r'size']}'),
         state: mapValueOfType<String>(json, r'state'),
+        tagIds: json[r'tagIds'] is Iterable
+            ? (json[r'tagIds'] as Iterable).cast<String>().toList(growable: false)
+            : const [],
+        tagsAnyOrAll: AnyOrAll.fromJson(json[r'tagsAnyOrAll']),
         takenAfter: mapDateTime(json, r'takenAfter', r''),
         takenBefore: mapDateTime(json, r'takenBefore', r''),
         trashedAfter: mapDateTime(json, r'trashedAfter', r''),

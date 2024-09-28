@@ -47,6 +47,8 @@
   import PhotoViewer from './photo-viewer.svelte';
   import SlideshowBar from './slideshow-bar.svelte';
   import VideoViewer from './video-wrapper-viewer.svelte';
+  import { shortcuts } from '$lib/actions/shortcut';
+  import { DetailPanelActions } from '$lib/models/detail-panel-models';
 
   export let assetStore: AssetStore | null = null;
   export let asset: AssetResponseDto;
@@ -392,9 +394,11 @@
     onAction?.(action);
   };
 
-  const handleUpdateSelectedEditType = (type: string) => {
+  let handleDetailPanelAction: (action: DetailPanelActions) => void;
+
+  function handleUpdateSelectedEditType(type: string) {
     selectedEditType = type;
-  };
+  }
 </script>
 
 <svelte:document bind:fullscreenElement />
@@ -403,6 +407,16 @@
   id="immich-asset-viewer"
   class="fixed left-0 top-0 z-[1001] grid size-full grid-cols-4 grid-rows-[64px_1fr] overflow-hidden bg-black"
   use:focusTrap
+  use:shortcuts={[
+    {
+      shortcut: { key: 't' },
+      onShortcut: () => handleDetailPanelAction(DetailPanelActions.StartTagging),
+    },
+    {
+      shortcut: { key: 'c' },
+      onShortcut: () => handleDetailPanelAction(DetailPanelActions.EditDescription),
+    },
+  ]}
 >
   <!-- Top navigation bar -->
   {#if $slideshowState === SlideshowState.None && !isShowEditor}
@@ -552,7 +566,13 @@
       class="z-[1002] row-start-1 row-span-4 w-[360px] overflow-y-auto bg-immich-bg transition-all dark:border-l dark:border-l-immich-dark-gray dark:bg-immich-dark-bg"
       translate="yes"
     >
-      <DetailPanel {asset} currentAlbum={album} albums={appearsInAlbums} onClose={() => ($isShowDetail = false)} />
+      <DetailPanel
+        {asset}
+        currentAlbum={album}
+        albums={appearsInAlbums}
+        bind:handleDetailPanelAction
+        onClose={() => ($isShowDetail = false)}
+      />
     </div>
   {/if}
 

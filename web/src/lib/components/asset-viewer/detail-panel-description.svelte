@@ -10,6 +10,7 @@
 
   export let asset: AssetResponseDto;
   export let isOwner: boolean;
+  export let editDescription: () => void;
 
   $: description = asset.exifInfo?.description || '';
 
@@ -33,6 +34,7 @@
       content={description}
       class="max-h-[500px] w-full border-b border-gray-500 bg-transparent text-base text-black outline-none transition-all focus:border-b-2 focus:border-immich-primary disabled:border-none dark:text-white dark:focus:border-immich-dark-primary immich-scrollbar"
       onContentUpdate={handleFocusOut}
+      bind:handleFocus={editDescription}
       placeholder={$t('add_a_description')}
     />
   </section>

@@ -73,16 +73,31 @@ export const tagAssets = async ({
   tagIds: string[];
   showNotification?: boolean;
 }) => {
+  let successes = 0;
+  const errors:string[] = [];
   for (const tagId of tagIds) {
-    await tagAllAssets({ id: tagId, bulkIdsDto: { ids: assetIds } });
+    const response = await tagAllAssets({ id: tagId, bulkIdsDto: { ids: assetIds } });
+    response.every((r) => {
+      if (r.error) {
+        errors.push(r.error);
+      } else {
+        successes++;
+      }
+    });
   }
 
   if (showNotification) {
     const $t = await getFormatter();
-    notificationController.show({
-      message: $t('tagged_assets', { values: { count: assetIds.length } }),
-      type: NotificationType.Info,
-    });
+    if (errors.length > 0) {
+      notificationController.show({
+        message: $t('tagged_assets_error', { values: { count: errors.length } })
+      })
+    } else {
+      notificationController.show({
+        message: $t('tagged_assets', { values: { count: successes } }),
+        type: NotificationType.Info,
+      });
+    }
   }
 
   return assetIds;

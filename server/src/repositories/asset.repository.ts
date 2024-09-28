@@ -8,6 +8,7 @@ import { ExifEntity } from 'src/entities/exif.entity';
 import { SmartInfoEntity } from 'src/entities/smart-info.entity';
 import { AssetFileType, AssetOrder, AssetStatus, AssetType, PaginationMode } from 'src/enum';
 import {
+  AnyOrAll,
   AssetBuilderOptions,
   AssetCreate,
   AssetDeltaSyncOptions,
@@ -30,6 +31,7 @@ import {
 import { AssetSearchOptions, SearchExploreItem } from 'src/interfaces/search.interface';
 import { searchAssetBuilder } from 'src/utils/database';
 import { Instrumentation } from 'src/utils/instrumentation';
+import { uniqueFilter } from 'src/utils/misc';
 import { Paginated, PaginationOptions, paginate, paginatedBuilder } from 'src/utils/pagination';
 import {
   Brackets,
@@ -682,13 +684,31 @@ export class AssetRepository implements IAssetRepository {
       builder.andWhere('asset.type = :assetType', { assetType: options.assetType });
     }
 
-    if (options.tagId) {
-      builder.innerJoin(
-        'asset.tags',
-        'asset_tags',
-        'asset_tags.id IN (SELECT id_descendant FROM tags_closure WHERE id_ancestor = :tagId)',
-        { tagId: options.tagId },
-      );
+    if (options.tagIds) {
+      const uniqueTagIds = options.tagIds.filter((val, ind, self) => uniqueFilter(val, ind, self));
+
+      if (options.tagsAnyOrAll === AnyOrAll.ALL) {
+        builder.innerJoinAndSelect(
+          (qb) =>
+            qb
+              .select('ARRAY_AGG(tag_asset.assetsId)', 'assetsIds')
+              .from('tag_asset', 'tag_asset')
+              .where('tag_asset.tagsId IN (SELECT id_descendant FROM tags_closure WHERE id_ancestor IN (:...tagIds))', {
+                tagIds: uniqueTagIds,
+              })
+              .groupBy('tag_asset.assetsId')
+              .having('COUNT(tag_asset.tagsId) = :tagsCount', { tagsCount: uniqueTagIds.length }), // match the count to # of unique tags to query all tags
+          'asset_tags',
+          'asset.id = ANY("asset_tags"."assetsIds")',
+        );
+      } else {
+        builder.innerJoin(
+          'asset.tags',
+          'asset_tags',
+          'asset_tags.id IN (SELECT id_descendant FROM tags_closure WHERE id_ancestor IN (:...tagIds))',
+          { tagIds: options.tagIds },
+        );
+      }
     }
 
     let stackJoined = false;
@@ -698,7 +718,8 @@ export class AssetRepository implements IAssetRepository {
       builder
         .leftJoinAndSelect('asset.exifInfo', 'exifInfo')
         .leftJoinAndSelect('asset.stack', 'stack')
-        .leftJoinAndSelect('stack.assets', 'stackedAssets');
+        .leftJoinAndSelect('stack.assets', 'stackedAssets')
+        .leftJoinAndSelect('asset.tags', 'tags');
     }
 
     if (options.albumId) {

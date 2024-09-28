@@ -13,12 +13,12 @@
   import SetBirthDateModal from '$lib/components/faces-page/set-birth-date-modal.svelte';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import FullScreenModal from '$lib/components/shared-components/full-screen-modal.svelte';
+  import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import {
     notificationController,
     NotificationType,
   } from '$lib/components/shared-components/notification/notification';
   import { ActionQueryParameterValue, AppRoute, QueryParameter } from '$lib/constants';
-  import { locale } from '$lib/stores/preferences.store';
   import { websocketEvents } from '$lib/stores/websocket';
   import { handlePromiseError } from '$lib/utils';
   import { handleError } from '$lib/utils/handle-error';
@@ -36,22 +36,15 @@
   import { t } from 'svelte-i18n';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
-  import type { PageData } from './$types';
 
-  export let data: PageData;
-
-  $: people = data.people.people;
-  $: visiblePeople = people.filter((people) => !people.isHidden);
-  $: countVisiblePeople = searchName ? searchedPeopleLocal.length : data.people.total - data.people.hidden;
-  $: showPeople = searchName ? searchedPeopleLocal : visiblePeople;
-
+  let people: PersonResponseDto[] = [];
   let selectHidden = false;
   let searchName = '';
   let showChangeNameModal = false;
   let showSetBirthDateModal = false;
   let showMergeModal = false;
   let personName = '';
-  let nextPage = data.people.hasNextPage ? 2 : null;
+  let nextPage = 1;
   let personMerge1: PersonResponseDto;
   let personMerge2: PersonResponseDto;
   let potentialMergePeople: PersonResponseDto[] = [];
@@ -60,13 +53,13 @@
   let handleSearchPeople: (force?: boolean, name?: string) => Promise<void>;
   let changeNameInputEl: HTMLInputElement | null;
   let innerHeight: number;
+  let isLoading = false;
 
   onMount(() => {
-    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
-    if (getSearchedPeople) {
-      searchName = getSearchedPeople;
-      handlePromiseError(handleSearchPeople(true, searchName));
-    }
+    const searchTerm = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
+
+    handlePromiseError(handleGetPeople(!!searchTerm, searchTerm));
+
     return websocketEvents.on('on_person_thumbnail', (personId: string) => {
       for (const person of people) {
         if (person.id === personId) {
@@ -85,19 +78,45 @@
     }
 
     try {
-      const { people: newPeople, hasNextPage } = await getAllPeople({ withHidden: true, page: nextPage });
-      people = people.concat(newPeople);
-      nextPage = hasNextPage ? nextPage + 1 : null;
+      await handleGetPeople();
     } catch (error) {
       handleError(error, $t('errors.failed_to_load_people'));
     }
   };
 
-  const handleSearch = async () => {
-    const getSearchedPeople = $page.url.searchParams.get(QueryParameter.SEARCHED_PEOPLE);
-    if (getSearchedPeople !== searchName) {
-      $page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchName);
-      await goto($page.url, { keepFocus: true });
+  const handleGetPeople = async (
+    withHidden: boolean = false,
+    searchTerm: string | null = searchName,
+    append: boolean = true,
+  ) => {
+    isLoading = true;
+    if (searchTerm !== searchName) {
+      if (!searchTerm) {
+        $page.url.searchParams.delete(QueryParameter.SEARCHED_PEOPLE);
+      } else {
+        searchName = searchTerm;
+        $page.url.searchParams.set(QueryParameter.SEARCHED_PEOPLE, searchTerm);
+      }
+    }
+
+    let newPeople: PersonResponseDto[] = [];
+
+    if (searchName) {
+      newPeople = await searchPerson({ name: searchName });
+    } else {
+      // const response = await getAllPeople({ withHidden, page: nextPage, size: 50 });
+      const response = await getAllPeople({ withHidden });
+      if (response.hasNextPage) {
+        nextPage++;
+      }
+      newPeople = response.people;
+    }
+
+    isLoading = false;
+    if (append) {
+      people = [...people, ...newPeople];
+    } else {
+      people = [...newPeople];
     }
   };
 
@@ -308,10 +327,7 @@
   />
 {/if}
 
-<UserPageLayout
-  title={$t('people')}
-  description={countVisiblePeople === 0 && !searchName ? undefined : `(${countVisiblePeople.toLocaleString($locale)})`}
->
+<UserPageLayout title={$t('people')} description="-1">
   <svelte:fragment slot="buttons">
     {#if people.length > 0}
       <div class="flex gap-2 items-center justify-center">
@@ -321,7 +337,7 @@
               type="searchBar"
               placeholder={$t('search_people')}
               onReset={onResetSearchBar}
-              onSearch={handleSearch}
+              onSearch={() => handleGetPeople(false, searchName, false)}
               bind:searchName
               bind:searchedPeopleLocal
               bind:handleSearch={handleSearchPeople}
@@ -338,9 +354,10 @@
     {/if}
   </svelte:fragment>
 
-  {#if countVisiblePeople > 0 && (!searchName || searchedPeopleLocal.length > 0)}
+  {#if people.length > 0}
     <PeopleInfiniteScroll
-      people={showPeople}
+      {people}
+      isLoading={true}
       hasNextPage={!!nextPage && !searchName}
       {loadNextPage}
       let:person
@@ -355,7 +372,7 @@
         onHidePerson={() => handleHidePerson(person)}
       />
     </PeopleInfiniteScroll>
-  {:else}
+  {:else if !isLoading}
     <div class="flex min-h-[calc(66vh_-_11rem)] w-full place-content-center items-center dark:text-white">
       <div class="flex flex-col content-center items-center text-center">
         <Icon path={mdiAccountOff} size="3.5em" />
@@ -414,7 +431,7 @@
   >
     <ManagePeopleVisibility
       bind:people
-      totalPeopleCount={data.people.total}
+      totalPeopleCount={-1}
       titleId="manage-visibility-title"
       onClose={() => (selectHidden = false)}
       {loadNextPage}

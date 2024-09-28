@@ -97,14 +97,15 @@ const formatDateGroupTitle = memoize(formatGroupTitle);
 
 export function splitBucketIntoDateGroups(bucket: AssetBucket, locale: string | undefined): DateGroup[] {
   const grouped = groupBy(bucket.assets, (asset) =>
-    fromLocalDateTime(asset.localDateTime).toLocaleString(groupDateFormat, { locale }),
+    asset.originalPath.replace(asset.originalFileName, '')
+    // fromLocalDateTime(asset.localDateTime).toLocaleString(groupDateFormat, { locale }),
   );
   const sorted = sortBy(grouped, (group) => bucket.assets.indexOf(group[0]));
   return sorted.map((group) => {
     const date = fromLocalDateTime(group[0].localDateTime).startOf('day');
     return {
       date,
-      groupTitle: formatDateGroupTitle(date),
+      groupTitle: group[0].originalPath.replace(group[0].originalFileName, ''),
       assets: group,
       height: 0,
       heightActual: false,

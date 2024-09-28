@@ -1646,8 +1646,6 @@
     },
     "/assets/random": {
       "get": {
-        "deprecated": true,
-        "description": "This property was deprecated in v1.116.0",
         "operationId": "getRandom",
         "parameters": [
           {
@@ -1687,12 +1685,8 @@
           }
         ],
         "tags": [
-          "Assets",
-          "Deprecated"
-        ],
-        "x-immich-lifecycle": {
-          "deprecatedAt": "v1.116.0"
-        }
+          "Assets"
+        ]
       }
     },
     "/assets/statistics": {
@@ -2853,6 +2847,41 @@
         ]
       }
     },
+    "/libraries/{id}/removeOffline": {
+      "post": {
+        "operationId": "removeOfflineFiles",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Libraries"
+        ]
+      }
+    },
     "/libraries/{id}/scan": {
       "post": {
         "operationId": "scanLibrary",
@@ -2867,6 +2896,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanLibraryDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "204": {
             "description": ""
@@ -3100,6 +3139,55 @@
                     "$ref": "#/components/schemas/MapReverseGeocodeResponseDto"
                   },
                   "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Map"
+        ]
+      }
+    },
+    "/map/style.json": {
+      "get": {
+        "operationId": "getMapStyle",
+        "parameters": [
+          {
+            "name": "key",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "theme",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MapTheme"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             },
@@ -3446,13 +3534,6 @@
         },
         "responses": {
           "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TestEmailResponseDto"
-                }
-              }
-            },
             "description": ""
           }
         },
@@ -4574,48 +4655,6 @@
                     "$ref": "#/components/schemas/PlacesResponseDto"
                   },
                   "type": "array"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "tags": [
-          "Search"
-        ]
-      }
-    },
-    "/search/random": {
-      "post": {
-        "operationId": "searchRandom",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RandomSearchDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SearchResponseDto"
                 }
               }
             },
@@ -6586,12 +6625,23 @@
             }
           },
           {
-            "name": "tagId",
+            "name": "tagIds",
             "required": false,
             "in": "query",
             "schema": {
               "format": "uuid",
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "tagsAnyOrAll",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnyOrAll"
             }
           },
           {
@@ -6730,12 +6780,23 @@
             }
           },
           {
-            "name": "tagId",
+            "name": "tagIds",
             "required": false,
             "in": "query",
             "schema": {
               "format": "uuid",
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "tagsAnyOrAll",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AnyOrAll"
             }
           },
           {
@@ -7827,6 +7888,13 @@
         ],
         "type": "object"
       },
+      "AnyOrAll": {
+        "enum": [
+          "any",
+          "all"
+        ],
+        "type": "string"
+      },
       "AssetBulkDeleteDto": {
         "properties": {
           "force": {
@@ -8240,6 +8308,9 @@
             "type": "boolean"
           },
           "isFavorite": {
+            "type": "boolean"
+          },
+          "isOffline": {
             "type": "boolean"
           },
           "isVisible": {
@@ -9078,7 +9149,7 @@
           "maxDistance": {
             "format": "double",
             "maximum": 2,
-            "minimum": 0.1,
+            "minimum": 0,
             "type": "number"
           },
           "minFaces": {
@@ -9088,7 +9159,7 @@
           "minScore": {
             "format": "double",
             "maximum": 1,
-            "minimum": 0.1,
+            "minimum": 0,
             "type": "number"
           },
           "modelName": {
@@ -9605,6 +9676,13 @@
         ],
         "type": "object"
       },
+      "MapTheme": {
+        "enum": [
+          "light",
+          "dark"
+        ],
+        "type": "string"
+      },
       "MemoriesResponse": {
         "properties": {
           "enabled": {
@@ -9873,6 +9951,16 @@
           "state": {
             "nullable": true,
             "type": "string"
+          },
+          "tagIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tagsAnyOrAll": {
+            "$ref": "#/components/schemas/AnyOrAll"
           },
           "takenAfter": {
             "format": "date-time",
@@ -10405,130 +10493,6 @@
         ],
         "type": "object"
       },
-      "RandomSearchDto": {
-        "properties": {
-          "city": {
-            "nullable": true,
-            "type": "string"
-          },
-          "country": {
-            "nullable": true,
-            "type": "string"
-          },
-          "createdAfter": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "createdBefore": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deviceId": {
-            "type": "string"
-          },
-          "isArchived": {
-            "type": "boolean"
-          },
-          "isEncoded": {
-            "type": "boolean"
-          },
-          "isFavorite": {
-            "type": "boolean"
-          },
-          "isMotion": {
-            "type": "boolean"
-          },
-          "isNotInAlbum": {
-            "type": "boolean"
-          },
-          "isOffline": {
-            "type": "boolean"
-          },
-          "isVisible": {
-            "type": "boolean"
-          },
-          "lensModel": {
-            "nullable": true,
-            "type": "string"
-          },
-          "libraryId": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string"
-          },
-          "make": {
-            "type": "string"
-          },
-          "model": {
-            "nullable": true,
-            "type": "string"
-          },
-          "page": {
-            "minimum": 1,
-            "type": "number"
-          },
-          "personIds": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "size": {
-            "maximum": 1000,
-            "minimum": 1,
-            "type": "number"
-          },
-          "state": {
-            "nullable": true,
-            "type": "string"
-          },
-          "takenAfter": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "takenBefore": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "trashedAfter": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "trashedBefore": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/AssetTypeEnum"
-          },
-          "updatedAfter": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedBefore": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "withArchived": {
-            "default": false,
-            "type": "boolean"
-          },
-          "withDeleted": {
-            "type": "boolean"
-          },
-          "withExif": {
-            "type": "boolean"
-          },
-          "withPeople": {
-            "type": "boolean"
-          },
-          "withStacked": {
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
       "RatingsResponse": {
         "properties": {
           "enabled": {
@@ -10578,6 +10542,17 @@
           "lastImportFileName",
           "lastUpdate"
         ],
+        "type": "object"
+      },
+      "ScanLibraryDto": {
+        "properties": {
+          "refreshAllFiles": {
+            "type": "boolean"
+          },
+          "refreshModifiedFiles": {
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "SearchAlbumResponseDto": {
@@ -10809,12 +10784,6 @@
           "loginPageMessage": {
             "type": "string"
           },
-          "mapDarkStyleUrl": {
-            "type": "string"
-          },
-          "mapLightStyleUrl": {
-            "type": "string"
-          },
           "oauthButtonText": {
             "type": "string"
           },
@@ -10830,8 +10799,6 @@
           "isInitialized",
           "isOnboarded",
           "loginPageMessage",
-          "mapDarkStyleUrl",
-          "mapLightStyleUrl",
           "oauthButtonText",
           "trashDays",
           "userDeleteDelay"
@@ -11354,6 +11321,16 @@
             "nullable": true,
             "type": "string"
           },
+          "tagIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tagsAnyOrAll": {
+            "$ref": "#/components/schemas/AnyOrAll"
+          },
           "takenAfter": {
             "format": "date-time",
             "type": "string"
@@ -11654,28 +11631,6 @@
         ],
         "type": "object"
       },
-      "SystemConfigGeneratedImageDto": {
-        "properties": {
-          "format": {
-            "$ref": "#/components/schemas/ImageFormat"
-          },
-          "quality": {
-            "maximum": 100,
-            "minimum": 1,
-            "type": "integer"
-          },
-          "size": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "format",
-          "quality",
-          "size"
-        ],
-        "type": "object"
-      },
       "SystemConfigImageDto": {
         "properties": {
           "colorspace": {
@@ -11684,18 +11639,34 @@
           "extractEmbedded": {
             "type": "boolean"
           },
-          "preview": {
-            "$ref": "#/components/schemas/SystemConfigGeneratedImageDto"
+          "previewFormat": {
+            "$ref": "#/components/schemas/ImageFormat"
           },
-          "thumbnail": {
-            "$ref": "#/components/schemas/SystemConfigGeneratedImageDto"
+          "previewSize": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "quality": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "thumbnailFormat": {
+            "$ref": "#/components/schemas/ImageFormat"
+          },
+          "thumbnailSize": {
+            "minimum": 1,
+            "type": "integer"
           }
         },
         "required": [
           "colorspace",
           "extractEmbedded",
-          "preview",
-          "thumbnail"
+          "previewFormat",
+          "previewSize",
+          "quality",
+          "thumbnailFormat",
+          "thumbnailSize"
         ],
         "type": "object"
       },
@@ -12300,17 +12271,6 @@
             "type": "boolean"
           }
         },
-        "type": "object"
-      },
-      "TestEmailResponseDto": {
-        "properties": {
-          "messageId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "messageId"
-        ],
         "type": "object"
       },
       "TimeBucketResponseDto": {

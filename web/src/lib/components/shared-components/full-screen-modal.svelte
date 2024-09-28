@@ -4,6 +4,8 @@
   import { fade } from 'svelte/transition';
   import ModalHeader from '$lib/components/shared-components/modal-header.svelte';
   import { generateId } from '$lib/utils/generate-id';
+  import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
+  import { mdiArrowCollapse } from '@mdi/js';
 
   export let onClose: () => void;
   export let title: string;
@@ -75,7 +77,11 @@
     aria-labelledby={titleId}
   >
     <div class="immich-scrollbar overflow-y-auto pt-1" class:pb-4={isStickyBottom}>
-      <ModalHeader id={titleId} {title} {showLogo} {icon} {onClose} />
+      <ModalHeader id={titleId} {title} {showLogo} {icon} {onClose}>
+        <svelte:fragment slot="modal-controls">
+          <slot name="modal-controls" />
+        </svelte:fragment>
+      </ModalHeader>
       <div class="px-5 pt-0">
         <slot />
       </div>

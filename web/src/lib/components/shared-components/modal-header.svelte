@@ -32,6 +32,8 @@
       {title}
     </h1>
   </div>
-
+  <div class="flex flex-grow justify-end">
+    <slot name="modal-controls" />
+  </div>
   <CircleIconButton on:click={onClose} icon={mdiClose} size={'20'} title={$t('close')} />
 </div>

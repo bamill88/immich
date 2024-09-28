@@ -138,7 +138,7 @@
       segments.push(segment);
     }
 
-    hoverLabel = segments[0]?.dateFormatted;
+    hoverLabel = segments[0]?.bucketDate;
     return segments;
   };
 
@@ -228,6 +228,7 @@
       id="time-label"
       class="truncate opacity-85 pointer-events-none absolute right-0 z-[100] min-w-20 max-w-64 w-fit rounded-tl-md border-b-2 border-immich-primary bg-immich-bg py-1 px-1 text-sm font-medium shadow-[0_0_8px_rgba(0,0,0,0.25)] dark:border-immich-dark-primary dark:bg-immich-dark-gray dark:text-immich-dark-fg"
       style:top="{hoverY + 2}px"
+      style:direction="rtl"
     >
       {hoverLabel}
     </div>
@@ -239,7 +240,7 @@
       style:top="{scrollY + HOVER_DATE_HEIGHT}px"
     />
   {/if}
-  <div id="lead-in" class="relative" style:height={relativeTopOffset + 'px'} data-label={segments.at(0)?.dateFormatted}>
+  <div id="lead-in" class="relative" style:height={relativeTopOffset + 'px'} data-label={segments.at(0)?.bucketDate}>
     {#if relativeTopOffset > 6}
       <div class="absolute right-[0.75rem] h-[4px] w-[4px] rounded-full bg-gray-300" />
     {/if}
@@ -249,8 +250,8 @@
     <div
       id="time-segment"
       class="relative"
-      data-time-segment-bucket-date={segment.date}
-      data-label={segment.dateFormatted}
+      data-time-segment-bucket-date={segment.bucketDate}
+      data-label={segment.bucketDate}
       style:height={segment.height + 'px'}
       aria-label={segment.dateFormatted + ' ' + segment.count}
     >
@@ -259,7 +260,7 @@
           aria-label={segment.dateFormatted + ' ' + segment.count}
           class="absolute right-[1.25rem] top-[-16px] z-10 text-[12px] dark:text-immich-dark-fg font-immich-mono"
         >
-          {segment.date.year}
+          {segment.bucketDate.split('/').at(-2)}
         </div>
       {/if}
       {#if segment.hasDot}

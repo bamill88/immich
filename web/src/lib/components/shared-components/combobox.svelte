@@ -32,10 +32,12 @@
 
   export let label: string;
   export let hideLabel = false;
+  export let maintainSelectedOption = true;
   export let options: ComboBoxOption[] = [];
   export let selectedOption: ComboBoxOption | undefined = undefined;
   export let placeholder = '';
   export let onSelect: (option: ComboBoxOption | undefined) => void = () => {};
+  export let onClose: () => void | undefined = () => {};
 
   /**
    * Unique identifier for the combobox.
@@ -119,6 +121,7 @@
   const closeDropdown = () => {
     isOpen = false;
     selectedIndex = undefined;
+    onClose();
   };
 
   const incrementSelectedIndex = async (increment: number) => {
@@ -141,8 +144,10 @@
   };
 
   let handleSelect = (option: ComboBoxOption) => {
-    selectedOption = option;
-    searchQuery = option.label;
+    if (maintainSelectedOption) {
+      selectedOption = option;
+      searchQuery = option.label;
+    }
     onSelect(option);
     closeDropdown();
   };

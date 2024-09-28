@@ -48,7 +48,9 @@
   $: tagId = tag?.id;
   $: tree = buildTree(tags.map((tag) => tag.value));
   $: {
-    void assetStore.updateOptions({ tagId });
+    if (tagId) {
+      void assetStore.updateOptions({ tagIds: [tagId] });
+    }
   }
 
   const handleNavigation = async (tag: string) => {

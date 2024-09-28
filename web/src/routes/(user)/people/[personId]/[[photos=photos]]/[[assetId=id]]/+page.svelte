@@ -35,12 +35,16 @@
   import { handleError } from '$lib/utils/handle-error';
   import { isExternalUrl } from '$lib/utils/navigation';
   import {
+    getAllTags,
+    getAssetInfo,
     getPersonStatistics,
     mergePerson,
     searchPerson,
+    updateAssets,
     updatePerson,
     type AssetResponseDto,
     type PersonResponseDto,
+    type TagResponseDto,
   } from '@immich/sdk';
   import {
     mdiAccountBoxOutline,
@@ -51,17 +55,23 @@
     mdiEyeOffOutline,
     mdiEyeOutline,
     mdiPlus,
+    mdiTagMultipleOutline,
   } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
   import type { PageData } from './$types';
   import { listNavigation } from '$lib/actions/list-navigation';
   import { t } from 'svelte-i18n';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import { focusTrap } from '$lib/actions/focus-trap';
+  import Combobox from '$lib/components/shared-components/combobox.svelte';
+  import { removeTag, tagAssets } from '$lib/utils/asset-utils';
+  import TagChip from '$lib/components/shared-components/tags/tag-chip.svelte';
 
   export let data: PageData;
 
   let numberOfAssets = data.statistics.assets;
   let { isViewing: showAssetViewer } = assetViewingStore;
+  let allTags: TagResponseDto[] = [];
 
   enum ViewMode {
     VIEW_ASSETS = 'view-assets',
@@ -70,6 +80,7 @@
     SUGGEST_MERGE = 'suggest-merge',
     BIRTH_DATE = 'birth-date',
     UNASSIGN_ASSETS = 'unassign-faces',
+    TAG_ASSETS = 'tag-assets',
   }
 
   let assetStore = new AssetStore({
@@ -83,6 +94,9 @@
     handlePromiseError(updateAssetCount());
     handlePromiseError(assetStore.updateOptions({ personId: person.id }));
   }
+  $: getAllTags().then((tags) => {
+    allTags = tags;
+  });
 
   const assetInteractionStore = createAssetInteractionStore();
   const { selectedAssets, isMultiSelectState } = assetInteractionStore;
@@ -109,9 +123,23 @@
    **/
   let isSearchingPeople = false;
   let suggestionContainer: HTMLDivElement;
+  let selectedAssetCommonTags: TagResponseDto[] = [];
 
   $: isAllArchive = [...$selectedAssets].every((asset) => asset.isArchived);
   $: isAllFavorite = [...$selectedAssets].every((asset) => asset.isFavorite);
+  selectedAssets.subscribe((data) => {
+    const assets = [...data];
+    selectedAssetCommonTags = allTags.filter((tag) =>
+      assets.map((a) => a.tags).every((assetTags) => assetTags && new Set(assetTags.map((t) => t.id)).has(tag.id)),
+    );
+  });
+
+  websocketEvents.on('on_asset_update', () => {
+    const assets = [...$selectedAssets];
+    selectedAssetCommonTags = allTags.filter((tag) =>
+      assets.map((a) => a.tags).every((assetTags) => assetTags && new Set(assetTags.map((t) => t.id)).has(tag.id)),
+    );
+  });
 
   onMount(() => {
     const action = $page.url.searchParams.get(QueryParameter.ACTION);
@@ -338,6 +366,39 @@
     }
   };
 
+  const handleStartTagging = async () => {
+    viewMode = ViewMode.TAG_ASSETS;
+  };
+
+  const addAssetTag = async (tagId: string, assetIds: string[]) => {
+    if (tagId) {
+      await tagAssets({ tagIds: [tagId], assetIds, showNotification: true });
+      const assets = await Promise.all(assetIds.map(async (assetId) => await getAssetInfo({ id: assetId })));
+      assetStore.updateAssets(assets);
+      assetStore.triggerUpdate();
+    }
+  };
+
+  const removeAssetTag = async (tagId: string, assetIds: string[]) => {
+    const ids = await removeTag({ tagIds: [tagId], assetIds, showNotification: true });
+  };
+
+  const handleTagSelect = async (tagId?: string) => {
+    if (!tagId) return;
+
+    await addAssetTag(
+      tagId,
+      [...$selectedAssets].map((a) => a.id),
+    );
+  };
+
+  const handleTagRemove = async (tagId: string) => {
+    await removeAssetTag(
+      tagId,
+      [...$selectedAssets].map((a) => a.id),
+    );
+  };
+
   onDestroy(() => {
     assetStore.destroy();
   });
@@ -378,6 +439,24 @@
 <header>
   {#if $isMultiSelectState}
     <AssetSelectControlBar assets={$selectedAssets} clearSelect={() => assetInteractionStore.clearMultiselect()}>
+      {$t('tag_assets')}
+      <div>
+        {#each selectedAssetCommonTags as tag (tag.id)}
+          <TagChip
+            tag={tag.value}
+            tagUrl={encodeURI(`${AppRoute.TAGS}/?path=${tag.value}`)}
+            handleRemove={() => handleTagRemove(tag.id)}
+          />
+        {/each}
+      </div>
+      <div class="justify-self-end pl-4" use:focusTrap>
+        <Combobox
+          on:select={({ detail: option }) => handleTagSelect(option?.value)}
+          label=""
+          options={allTags.map((tag) => ({ id: tag.id, label: tag.value, value: tag.id }))}
+          placeholder={$t('search_tags')}
+        />
+      </div>
       <CreateSharedLink />
       <SelectAllAssets {assetStore} {assetInteractionStore} />
       <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
@@ -422,6 +501,11 @@
               text={$t('merge_people')}
               icon={mdiAccountMultipleCheckOutline}
               onClick={() => (viewMode = ViewMode.MERGE_PEOPLE)}
+            />
+            <MenuOption
+              text={$t('tag_assets')}
+              icon={mdiTagMultipleOutline}
+              onClick={() => (viewMode = ViewMode.TAG_ASSETS)}
             />
           </ButtonContextMenu>
         </svelte:fragment>

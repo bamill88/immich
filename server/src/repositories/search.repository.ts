@@ -110,7 +110,7 @@ export class SearchRepository implements ISearchRepository {
   })
   async searchSmart(
     pagination: SearchPaginationOptions,
-    { embedding, userIds, personIds, ...options }: SmartSearchOptions,
+    { embedding, userIds, personIds, tagIds, tagsAnyOrAll, ...options }: SmartSearchOptions,
   ): Paginated<AssetEntity> {
     let results: PaginationResult<AssetEntity> = { items: [], hasNextPage: false };
 

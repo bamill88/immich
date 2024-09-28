@@ -58,6 +58,9 @@ String parameterToString(dynamic value) {
   if (value is AlbumUserRole) {
     return AlbumUserRoleTypeTransformer().encode(value).toString();
   }
+  if (value is AnyOrAll) {
+    return AnyOrAllTypeTransformer().encode(value).toString();
+  }
   if (value is AssetJobName) {
     return AssetJobNameTypeTransformer().encode(value).toString();
   }
@@ -99,6 +102,9 @@ String parameterToString(dynamic value) {
   }
   if (value is ManualJobName) {
     return ManualJobNameTypeTransformer().encode(value).toString();
+  }
+  if (value is MapTheme) {
+    return MapThemeTypeTransformer().encode(value).toString();
   }
   if (value is MemoryType) {
     return MemoryTypeTypeTransformer().encode(value).toString();

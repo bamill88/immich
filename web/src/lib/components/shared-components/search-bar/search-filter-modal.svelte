@@ -15,6 +15,8 @@
     personIds: Set<string>;
     location: SearchLocationFilter;
     camera: SearchCameraFilter;
+    tagIds: Set<string>;
+    tagsAnyOrAll: AnyOrAll;
     date: SearchDateFilter;
     display: SearchDisplayFilters;
     mediaType: MediaType;
@@ -23,7 +25,7 @@
 
 <script lang="ts">
   import Button from '$lib/components/elements/buttons/button.svelte';
-  import { AssetTypeEnum, type SmartSearchDto, type MetadataSearchDto } from '@immich/sdk';
+  import { AssetTypeEnum, type SmartSearchDto, type MetadataSearchDto, AnyOrAll } from '@immich/sdk';
   import SearchPeopleSection from './search-people-section.svelte';
   import SearchLocationSection from './search-location-section.svelte';
   import SearchCameraSection, { type SearchCameraFilter } from './search-camera-section.svelte';
@@ -36,6 +38,7 @@
   import FullScreenModal from '$lib/components/shared-components/full-screen-modal.svelte';
   import { mdiTune } from '@mdi/js';
   import { generateId } from '$lib/utils/generate-id';
+  import SearchTagsSection from '$lib/components/shared-components/search-bar/search-tags-section.svelte';
 
   export let searchQuery: MetadataSearchDto | SmartSearchDto;
   export let onClose: () => void;
@@ -63,6 +66,8 @@
       make: withNullAsUndefined(searchQuery.make),
       model: withNullAsUndefined(searchQuery.model),
     },
+    tagIds: new Set('tagIds' in searchQuery ? searchQuery.tagIds : []),
+    tagsAnyOrAll: searchQuery.tagsAnyOrAll || AnyOrAll.Any,
     date: {
       takenAfter: searchQuery.takenAfter ? toStartOfDayDate(searchQuery.takenAfter) : undefined,
       takenBefore: searchQuery.takenBefore ? toStartOfDayDate(searchQuery.takenBefore) : undefined,
@@ -87,6 +92,8 @@
       personIds: new Set(),
       location: {},
       camera: {},
+      tagIds: new Set(),
+      tagsAnyOrAll: AnyOrAll.Any,
       date: {},
       display: {},
       mediaType: MediaType.All,
@@ -111,6 +118,8 @@
       city: filter.location.city,
       make: filter.camera.make,
       model: filter.camera.model,
+      tagIds: filter.tagIds.size > 0 ? [...filter.tagIds] : undefined,
+      tagsAnyOrAll: filter.tagIds.size > 0 ? filter.tagsAnyOrAll : undefined,
       takenAfter: parseOptionalDate(filter.date.takenAfter)?.startOf('day').toISO() || undefined,
       takenBefore: parseOptionalDate(filter.date.takenBefore)?.endOf('day').toISO() || undefined,
       isArchived: filter.display.isArchive || undefined,
@@ -138,6 +147,9 @@
 
       <!-- CAMERA MODEL -->
       <SearchCameraSection bind:filters={filter.camera} />
+
+      <!-- TAGS -->
+      <SearchTagsSection bind:selectedTags={filter.tagIds} bind:tagsAnyOrAll={filter.tagsAnyOrAll} />
 
       <!-- DATE RANGE -->
       <SearchDateSection bind:filters={filter.date} />
